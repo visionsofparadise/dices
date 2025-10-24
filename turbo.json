@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "tasks": {
+    "//#package-check": {
+      "inputs": ["**/package.json"]
+    },
+    "check": {
+      "dependsOn": ["//#package-check", "^check"],
+      "inputs": ["src/**", "./tsconfig.json"],
+      "outputs": []
+    },
+    "build": {
+      "env": ["REACT_APP_STAGE"],
+      "dependsOn": ["^build", "check"],
+      "inputs": ["src/**", "./tsconfig.json", "./package.json"],
+      "outputs": ["dist/**"]
+    },
+    "build-local": {
+      "env": ["REACT_APP_STAGE"],
+      "dependsOn": ["^build", "check"],
+      "inputs": ["src/**", "./tsconfig.json", "./package.json"],
+      "outputs": ["dist/**"]
+    },
+    "unit": {
+      "dependsOn": ["check"]
+    },
+    "integration": {
+      "dependsOn": ["build"]
+    },
+    "start": {
+      "dependsOn": ["build"]
+    },
+    "publish": {
+      "dependsOn": ["unit", "build"]
+    }
+  }
+}

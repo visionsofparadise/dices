@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "lib": ["ESNEXT", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "module": "CommonJS",
+    "target": "ES2022",
+    "jsx": "react",
+    "strict": true,
+    "composite": false,
+    "declaration": true,
+    "inlineSourceMap": true,
+    "isolatedModules": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "esModuleInterop": true,
+    "removeComments": true,
+    "allowUmdGlobalAccess": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "plugins": [
+      {
+        "name": "typescript-tslint-plugin",
+        "alwaysShowRuleFailuresAsWarnings": true,
+        "ignoreDefinitionFiles": true,
+        "configFile": "./tslint.json",
+        "suppressWhileTypeErrorsPresent": false
+      }
+    ]
+  },
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,30 @@
+{
+	"name": "bootstrap",
+	"version": "0.0.0",
+	"description": "Bootstrap nodes for DICES network testing",
+	"main": "./dist/index.js",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"check": "tsc --noEmit",
+		"build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js",
+		"start": "tsx src/index.ts"
+	},
+	"dependencies": {
+		"@noble/curves": "^1.6.0",
+		"@scure/base": "^1.2.4",
+		"@xkore/dice": "^0.3.6",
+		"@xkore/dices": "*",
+		"bufferfy": "^3.0.6",
+		"commander": "^14.0.0",
+		"dotenv": "^17.2.2",
+		"level": "^8.0.1",
+		"loglevel": "^1.9.2"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"esbuild": "^0.23.1",
+		"tsx": "^4.19.2",
+		"typescript": "^5.5.2"
+	}
+}

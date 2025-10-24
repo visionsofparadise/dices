@@ -1,0 +1,6 @@
+.turbo
+dist
+.db
+node_modules
+Dockerfile
+.dockerignore
