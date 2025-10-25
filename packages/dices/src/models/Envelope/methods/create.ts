@@ -2,7 +2,6 @@ import { RequiredProperties } from "@xkore/dice";
 import type { Envelope } from "..";
 import { Envelope as EnvelopeClass } from "..";
 import type { Keys } from "../../Keys";
-import { MAGIC_BYTES } from "../../../utilities/magicBytes";
 
 export const createEnvelope = (
 	properties: RequiredProperties<
@@ -12,7 +11,6 @@ export const createEnvelope = (
 	keys: Keys
 ): EnvelopeClass => {
 	const defaultProperties: Omit<Envelope.Properties, "rSignature"> = {
-		magicBytes: properties.magicBytes ?? MAGIC_BYTES,
 		version: properties.version ?? 0x01,
 		keyId: properties.keyId,
 		dhPublicKey: properties.dhPublicKey,

@@ -1,27 +1,55 @@
 # @xkore/dices
 
-Transport-agnostic quantum-resistant encryption layer for P2P applications using bounded triple ratchet (ML-KEM-1024 + X25519 + XChaCha20-Poly1305) encryption.
+Transport-agnostic quantum-resistant encryption layer for P2P applications.
 
-**In plain English:** DICES scrambles your messages so only the intended recipient can read them, using encryption that stays secure even against future quantum computers. Every message automatically updates the encryption keys - if someone steals today's keys, they can't read yesterday's messages (forward secrecy) or tomorrow's messages (backward secrecy).
+## Table of Contents
 
-## What is DICES?
+- [What is Dices?](#description)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core API](#core-api)
+- [Cryptography](#cryptography)
+- [Events](#events)
+- [Development](#development)
+- [License](#license)
 
-DICES provides end-to-end encryption for P2P applications that remains secure even against future quantum computers. It uses a **triple ratchet** system (combining three types of key updates) to ensure:
+## What is Dices?
 
-- **Forward secrecy**: Past messages stay secret even if current keys are compromised
-- **Backward secrecy**: Future messages stay secret even if past keys were compromised
-- **Quantum resistance**: Protection against attacks by quantum computers using ML-KEM-1024
+Building P2P applications requires secure encrypted data transfer between peers. You need:
 
-In an overlay network, nodes publish their public encryption keys to a DHT (distributed hash table). Once you know another node's ID, you can automatically discover their keys and establish an encrypted channel - no central server or pre-shared secrets required.
+- End-to-end encryption without central servers
+- Protection against future quantum computer attacks
+- Forward secrecy (compromised keys don't reveal past messages)
+- Backward secrecy (compromised keys don't reveal future messages)
+- Simple API that doesn't expose cryptographic complexity
 
-[See detailed cryptography explanation below](#cryptography)
+DICES provides encrypted channels between peers using just their node IDs. Two key components:
 
-## Features
+**1. Encrypt and decrypt your data**
 
-- **Quantum-resistant encryption**: ML-KEM-1024 (NIST FIPS 203) + X25519 hybrid approach
-- **Forward and backward secrecy**: Bounded triple ratchet with configurable message/time limits
-- **Transport-agnostic**: Works over any transport layer (UDP, TCP, WebRTC, etc.)
-- **DHT key discovery**: Automatic peer initiation key lookup via DICE protocol
+The entire encryption system is exposed through two functions:
+
+```typescript
+// Encrypt for a recipient
+const cipherData = await encrypt(nodeId, data, overlay);
+
+// Decrypt from sender
+const data = await decrypt(cipherData, overlay);
+```
+
+Behind the scenes, DICES uses a **bounded triple ratchet** - three independent mechanisms that continuously update encryption keys to provide forward secrecy, backward secrecy, and quantum resistance.
+
+**2. Automatic channel establishment via DHT**
+
+When you encrypt data for a recipient, DICES automatically:
+
+- Fetches their public keys from the distributed hash table
+- Establishes an encrypted session
+- Handles all key rotations and updates
+
+No manual key exchange. No central servers. Just node IDs.
+
+The encryption provides quantum resistance (via ML-KEM-1024), forward secrecy, and backward secrecy. [See detailed cryptography explanation below](#cryptography).
 
 ## Installation
 
@@ -54,19 +82,18 @@ await overlay.open();
 ### 2. Encrypting and Decrypting Messages
 
 ```typescript
-import { wrap, unwrap } from "@xkore/dices";
+import { encrypt, decrypt } from "@xkore/dices";
 
 // Encrypt message for Bob (automatically fetches his initiation keys from DHT)
-const envelope = await wrap(bobNodeId, messageData, overlay);
+const encrypted = await encrypt(bobNodeId, messageData, overlay);
 
-// envelope.buffer is a Uint8Array - send it via YOUR transport layer
+// encrypted is a Uint8Array - send it via YOUR transport layer
 // (UDP, TCP, WebRTC, WebSocket, carrier pigeon, etc.)
-// Example: await yourTransport.send(bobAddress, envelope.buffer);
+// Example: await yourTransport.send(bobAddress, encrypted);
 
-// When you receive an envelope buffer from your transport:
+// When you receive an encrypted buffer from your transport:
 // yourTransport.on("message", async (buffer, sender) => {
-// unwrap can accept either a buffer or Envelope instance
-const data = await unwrap(buffer, overlay);
+const data = await decrypt(buffer, overlay);
 console.log("Received message:", data);
 // });
 ```
@@ -146,17 +173,17 @@ await overlay.open(false);
 // Overlay is now ready for encrypted communication
 ```
 
-### wrap()
+### encrypt()
 
-Wraps (encrypts and signs) data for a remote peer into an envelope.
+Encrypts data for a remote peer.
 
 ```typescript
-import { wrap } from "@xkore/dices";
+import { encrypt } from "@xkore/dices";
 
-const envelope = await wrap(remoteNodeId, data, overlay);
+const encrypted = await encrypt(remoteNodeId, data, overlay);
 ```
 
-Creates an authenticated encrypted envelope using the bounded triple ratchet protocol. Automatically fetches initiation keys from the DHT for first messages. Initializes new ratchet sessions automatically. Handles ML-KEM rotation when message or time bounds are reached.
+Creates an authenticated encrypted buffer using the bounded triple ratchet protocol. Automatically fetches initiation keys from the DHT for first messages. Initializes new ratchet sessions automatically. Handles ML-KEM rotation when message or time bounds are reached.
 
 **Parameters:**
 
@@ -164,37 +191,37 @@ Creates an authenticated encrypted envelope using the bounded triple ratchet pro
 - `data`: Plaintext data to encrypt (Uint8Array)
 - `overlay`: The DICES overlay instance
 
-**Returns:** `Promise<Envelope>`
+**Returns:** `Promise<Uint8Array>` - Encrypted buffer
 
 **Throws:** `DicesOverlayError` if unable to fetch initiation keys or state save fails
 
 **Example:**
 
 ```typescript
-import { wrap } from "@xkore/dices";
+import { encrypt } from "@xkore/dices";
 
 // Both first and subsequent messages use the same simple API
-const envelope = await wrap(bobNodeId, messageData, overlay);
+const encrypted = await encrypt(bobNodeId, messageData, overlay);
 
-// Send envelope via your transport
-await overlay.send(bobTarget, envelope.buffer);
+// Send encrypted buffer via your transport
+await transport.send(bobAddress, encrypted);
 ```
 
-### unwrap()
+### decrypt()
 
-Unwraps (decrypts and authenticates) an envelope from a remote peer.
+Decrypts data from a remote peer.
 
 ```typescript
-import { unwrap } from "@xkore/dices";
+import { decrypt } from "@xkore/dices";
 
-const data = await unwrap(envelope, overlay);
+const data = await decrypt(buffer, overlay);
 ```
 
 Performs signature verification, initializes ratchet state if needed (for first message), handles DH ratchet updates, decrypts the message, and persists updated ratchet state.
 
 **Parameters:**
 
-- `envelope`: The encrypted envelope to unwrap (Envelope instance or Uint8Array buffer)
+- `buffer`: The encrypted buffer to decrypt (Uint8Array)
 - `overlay`: The DICES overlay instance
 
 **Returns:** `Promise<Uint8Array>` - Decrypted plaintext data
@@ -204,17 +231,15 @@ Performs signature verification, initializes ratchet state if needed (for first 
 **Example:**
 
 ```typescript
-import { unwrap } from "@xkore/dices";
+import { decrypt } from "@xkore/dices";
 
 // Listen for incoming messages
-overlay.events.on("message", async (message, context) => {
+transport.on("message", async (buffer, sender) => {
 	try {
-		// Decrypt and verify - unwrap accepts buffer directly
-		const data = await unwrap(context.buffer, overlay);
-
+		const data = await decrypt(buffer, overlay);
 		console.log("Received message:", new TextDecoder().decode(data));
 	} catch (error) {
-		console.error("Failed to unwrap envelope:", error);
+		console.error("Failed to decrypt:", error);
 	}
 });
 ```
@@ -261,6 +286,7 @@ The system uses a **triple ratchet** - three independent mechanisms that continu
 All three ratchets work together - the output of the KEM and DH ratchets feeds into the symmetric ratchet, which generates the actual encryption keys for messages.
 
 **Additional Cryptography Components:**
+
 - **XChaCha20-Poly1305**: The actual message encryption - authenticated encryption with extended nonce space
 - **HKDF-SHA256**: Derives multiple keys from ratchet outputs with domain separation (ensures keys used for different purposes can't interfere)
 - **secp256k1**: Node identity and message signatures (same curve as Bitcoin)
@@ -282,8 +308,8 @@ You can configure these bounds when creating an overlay:
 ```typescript
 const overlay = new Overlay({
 	// ... other options
-	maxMessagesBeforeRotation: 50,        // Rotate after 50 messages
-	maxTimeBeforeRotation: 1800000,       // Rotate after 30 minutes
+	maxMessagesBeforeRotation: 50, // Rotate after 50 messages
+	maxTimeBeforeRotation: 1800000, // Rotate after 30 minutes
 });
 ```
 

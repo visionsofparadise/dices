@@ -1,7 +1,6 @@
 import { RequiredProperties } from "@xkore/dice";
 import { createCheck } from "../../utilities/check";
 import { createChecksum, createShortHash } from "../../utilities/Hash";
-import { MAGIC_BYTES } from "../../utilities/magicBytes";
 import { CipherData } from "../CipherData";
 import { Keys } from "../Keys";
 import { RSignature } from "../Keys/Codec";
@@ -16,7 +15,6 @@ export type { EncryptOptions } from "./methods/encrypt";
 
 export namespace Envelope {
 	export interface Properties extends EnvelopeProperties {
-		magicBytes: Uint8Array;
 		version: number;
 		keyId: Uint8Array;
 		dhPublicKey: Uint8Array;
@@ -45,9 +43,9 @@ export class Envelope implements Envelope.Properties {
 	 * Static factory method that creates a complete envelope with all required properties,
 	 * computes the hash, signs it with the provided keys, and returns the envelope instance.
 	 * Typically used when manually constructing envelopes - most applications should use
-	 * Overlay.wrap() instead.
+	 * encrypt() instead.
 	 *
-	 * @param properties - Envelope properties (magicBytes and version default if not provided)
+	 * @param properties - Envelope properties (version defaults to 0x01 if not provided)
 	 * @param properties.keyId - Recipient's ratchet key identifier (8 bytes)
 	 * @param properties.dhPublicKey - Sender's ephemeral X25519 public key (32 bytes)
 	 * @param properties.messageNumber - Current message number in the sending chain
@@ -99,7 +97,6 @@ export class Envelope implements Envelope.Properties {
 	static encrypt = encryptEnvelope;
 	static hash = hashEnvelope;
 
-	readonly magicBytes = MAGIC_BYTES;
 	readonly version = 0x01;
 	readonly keyId: Uint8Array;
 	readonly dhPublicKey: Uint8Array;
@@ -179,10 +176,9 @@ export class Envelope implements Envelope.Properties {
 	}
 
 	get properties(): Envelope.Properties {
-		const { magicBytes, version, keyId, dhPublicKey, messageNumber, previousChainLength, kemCiphertext, cipherData, rSignature } = this;
+		const { version, keyId, dhPublicKey, messageNumber, previousChainLength, kemCiphertext, cipherData, rSignature } = this;
 
 		return {
-			magicBytes,
 			version,
 			keyId,
 			dhPublicKey,

@@ -19,7 +19,6 @@ describe("DICES Crypto System Integration", () => {
 		const { ratchetState: aliceState, envelope: envelope1 } = RatchetStateItem.initializeAsInitiator(aliceKeys.nodeId, bobKeys.nodeId, bobRatchetKeys.publicKeys, message1, aliceKeys);
 
 		// Verify envelope structure
-		expect(envelope1.magicBytes).toEqual(new TextEncoder().encode("DICES"));
 		expect(envelope1.version).toBe(0x01);
 		expect(envelope1.messageNumber).toBe(0);
 		expect(envelope1.kemCiphertext).toBeDefined(); // First message includes ML-KEM ciphertext

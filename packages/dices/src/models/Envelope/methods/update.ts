@@ -17,7 +17,6 @@ export const updateEnvelope = (
 
 	return EnvelopeClass.create(
 		{
-			magicBytes: envelope.magicBytes,
 			version: envelope.version,
 			keyId: envelope.keyId,
 			dhPublicKey: envelope.dhPublicKey,

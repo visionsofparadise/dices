@@ -1,13 +1,7 @@
-import { secp256k1 } from "@noble/curves/secp256k1.js";
-import { hex } from "@scure/base";
 import { describe, expect, it } from "vitest";
 import { KeyChain } from "./index.js";
 
 describe("KeyChain.deriveChainKey", () => {
-	console.log(hex.encode(secp256k1.utils.randomSecretKey()));
-	console.log(hex.encode(secp256k1.utils.randomSecretKey()));
-	console.log(hex.encode(secp256k1.utils.randomSecretKey()));
-
 	it("should produce 32-byte chain key", () => {
 		const chainKey = crypto.getRandomValues(new Uint8Array(32));
 		const newChainKey = KeyChain.deriveChainKey(chainKey);

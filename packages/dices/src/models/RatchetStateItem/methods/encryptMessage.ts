@@ -1,5 +1,4 @@
 import type { RatchetStateItem } from "..";
-import { MAGIC_BYTES } from "../../../utilities/magicBytes";
 import { CipherData } from "../../CipherData";
 import { Envelope } from "../../Envelope";
 import { DicesOverlayError } from "../../Error";
@@ -21,7 +20,6 @@ export const encryptRatchetStateMessage = (ratchetState: RatchetStateItem, data:
 
 	const envelope = Envelope.create(
 		{
-			magicBytes: MAGIC_BYTES,
 			version: 0x01,
 			keyId: ratchetState.remoteKeyId,
 			dhPublicKey,

@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { INTEGRATION_TEST_TIMEOUT_MS, spawnIntegrationOverlays } from "../../../utilities/spawnIntegrationOverlays.js";
-import { wrap } from "../../../wrap.js";
-import { unwrap } from "../../../unwrap.js";
+import { encrypt } from "../../../encrypt.js";
+import { decrypt } from "../../../decrypt.js";
 
-describe("wrap/unwrap", () => {
+describe("encrypt/decrypt", () => {
 	it(
-		"wraps and unwraps messages",
+		"encrypts and decrypts messages",
 		async () => {
 			await spawnIntegrationOverlays(undefined, async (_, [overlayA, overlayB]) => {
 				const message = new TextEncoder().encode("Hello from overlayA!");
 
-				// wrap auto-fetches initiation keys from DHT
-				const envelope = await wrap(overlayB.keys.nodeId, message, overlayA);
+				// encrypt auto-fetches initiation keys from DHT
+				const encrypted = await encrypt(overlayB.keys.nodeId, message, overlayA);
 
-				expect(envelope).toBeDefined();
-				expect(envelope.magicBytes).toEqual(new TextEncoder().encode("DICES"));
+				expect(encrypted).toBeDefined();
+				expect(encrypted).toBeInstanceOf(Uint8Array);
 
-				// overlayB unwraps the message
-				const data = await unwrap(envelope, overlayB);
+				// overlayB decrypts the message
+				const data = await decrypt(encrypted, overlayB);
 
 				expect(new TextDecoder().decode(data)).toBe("Hello from overlayA!");
 			});
@@ -39,14 +39,14 @@ describe("wrap/unwrap", () => {
 
 				for (const msg of messages) {
 					if (msg.from === "A") {
-						// wrap auto-handles initiation keys for both first and subsequent messages
-						const envelope = await wrap(overlayB.keys.nodeId, new TextEncoder().encode(msg.text), overlayA);
-						const data = await unwrap(envelope, overlayB);
+						// encrypt auto-handles initiation keys for both first and subsequent messages
+						const encrypted = await encrypt(overlayB.keys.nodeId, new TextEncoder().encode(msg.text), overlayA);
+						const data = await decrypt(encrypted, overlayB);
 						expect(new TextDecoder().decode(data)).toBe(msg.text);
 					} else {
-						// wrap auto-handles initiation keys for both first and subsequent messages
-						const envelope = await wrap(overlayA.keys.nodeId, new TextEncoder().encode(msg.text), overlayB);
-						const data = await unwrap(envelope, overlayA);
+						// encrypt auto-handles initiation keys for both first and subsequent messages
+						const encrypted = await encrypt(overlayA.keys.nodeId, new TextEncoder().encode(msg.text), overlayB);
+						const data = await decrypt(encrypted, overlayA);
 						expect(new TextDecoder().decode(data)).toBe(msg.text);
 					}
 				}

@@ -6,9 +6,9 @@ import { RatchetKeysPublic } from "./models/RatchetKeysItem/PublicCodec.js";
 import { RatchetStateItem } from "./models/RatchetStateItem/index.js";
 
 /**
- * Wraps (encrypts and signs) data for a remote peer into an envelope.
+ * Encrypts data for a remote peer.
  *
- * Creates an authenticated encrypted envelope using the bounded triple ratchet protocol.
+ * Creates an authenticated encrypted buffer using the bounded triple ratchet protocol.
  * Initializes new ratchet sessions automatically on first message. Handles ML-KEM rotation
  * when message or time bounds are reached. Automatically fetches initiation keys from DHT
  * if needed for first message.
@@ -16,18 +16,18 @@ import { RatchetStateItem } from "./models/RatchetStateItem/index.js";
  * @param remoteNodeId - The 20-byte nodeId of the recipient
  * @param data - Plaintext data to encrypt
  * @param overlay - The DICES overlay instance
- * @returns Promise resolving to the encrypted and signed envelope
+ * @returns Promise resolving to the encrypted buffer
  * @throws {DicesOverlayError} If unable to fetch initiation keys or state save fails
  *
  * @example
  * ```typescript
- * import { wrap } from "@xkore/dices";
+ * import { encrypt } from "@xkore/dices";
  *
- * const envelope = await wrap(recipientNodeId, messageData, overlay);
- * await overlay.send(target, envelope.buffer);
+ * const encrypted = await encrypt(recipientNodeId, messageData, overlay);
+ * await transport.send(encrypted);
  * ```
  */
-export const wrap = async (remoteNodeId: Uint8Array, data: Uint8Array, overlay: Overlay): Promise<Envelope> => {
+export const encrypt = async (remoteNodeId: Uint8Array, data: Uint8Array, overlay: Overlay): Promise<Uint8Array> => {
 	const ratchetId = computeRatchetId(overlay.keys.nodeId, remoteNodeId);
 
 	let ratchetState = await RatchetStateItem.get(RatchetStateItem.keyOf({ ratchetId }), overlay);
@@ -50,7 +50,7 @@ export const wrap = async (remoteNodeId: Uint8Array, data: Uint8Array, overlay: 
 			throw new DicesOverlayError("Failed to save ratchet state", { cause: error });
 		}
 
-		return envelope;
+		return envelope.buffer;
 	}
 
 	// For existing sessions, we may need to fetch fresh initiation keys if rotation is needed
@@ -74,5 +74,5 @@ export const wrap = async (remoteNodeId: Uint8Array, data: Uint8Array, overlay: 
 		throw new DicesOverlayError("Failed to save ratchet state", { cause: error });
 	}
 
-	return envelope;
+	return envelope.buffer;
 };

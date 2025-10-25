@@ -2,7 +2,6 @@ import { x25519 } from "@noble/curves/ed25519";
 import { ml_kem1024 } from "@noble/post-quantum/ml-kem.js";
 import { RatchetStateItem } from "..";
 import { computeRatchetId } from "../../../utilities/computeRatchetId";
-import { MAGIC_BYTES } from "../../../utilities/magicBytes";
 import { CipherData } from "../../CipherData";
 import { Envelope } from "../../Envelope";
 import { KeyChain } from "../../KeyChain";
@@ -57,7 +56,6 @@ export const initializeRatchetStateAsInitiator = (
 
 	const envelope = Envelope.create(
 		{
-			magicBytes: MAGIC_BYTES,
 			version: 0x01,
 			keyId: remoteInitiationKeys.keyId,
 			dhPublicKey,
