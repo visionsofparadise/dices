@@ -12,35 +12,38 @@
 - ✅ Envelope and CipherData (wire format with XChaCha20-Poly1305)
 - ✅ Key derivation (RootChain, KeyChain via HKDF)
 - ✅ Ratchet initialization, encryption, decryption
-- ✅ Overlay class with wrap/unwrap API
+- ✅ Standalone wrap/unwrap functions with auto-fetch
 - ✅ DHT operations and key rotation
 - ✅ Cleanup/prune functionality
-- ✅ Comprehensive test suite (61 tests, all passing)
+- ✅ Comprehensive test suite (92 tests, all passing)
 
 **Build:** ✅ Builds successfully (93.72 KB ESM + DTS)
 
-**Tests:** ✅ 61/61 tests passing (100%)
-- 54 unit tests covering core crypto primitives
-- 7 integration tests validating full protocol
+**Tests:** ✅ 92/92 tests passing (100%)
+- 79 unit tests covering core crypto primitives
+- 13 integration tests validating full protocol
 
 ## Test Coverage
 
-**Unit Tests (54 tests):**
+**Unit Tests (79 tests):**
 - KeyChain key derivation (14 tests) - HKDF, domain separation, caching
 - RootChain key derivation (5 tests) - root key updates, ML-KEM integration
 - CipherData encryption (10 tests) - XChaCha20-Poly1305, auth tags, tampering
 - RatchetStateItem bounds (12 tests) - message/time limits, DoS protection
 - Value signatures (7 tests) - signature creation, recovery, tampering detection
 - Envelope codec (6 tests) - serialization, magic bytes, KEM ciphertext
+- Keys model (25 tests) - identity, nodeId, signatures
 
-**Integration Tests (7 tests):**
-- Full ratchet encrypt/decrypt flow
+**Integration Tests (13 tests):**
+- Full ratchet encrypt/decrypt flow (2 tests)
 - Out-of-order message handling with skipped keys
 - DoS protection (1000 message skip limit)
 - DH ratchet on remote key changes
 - ML-KEM ratchet at bounds (100 messages)
 - Signature recovery and verification
 - Forward secrecy validation
+- DHT operations (FIND_NODE, FIND_VALUE, PING)
+- Bootstrap overlay spawning
 
 ## Blockers
 
@@ -59,6 +62,10 @@ None
    - Added `RootChain.initializeSendingChain()` for responder's first send
    - Fixed responder initialization to not derive sending chain prematurely
 5. **Test Framework** - Switched from Jest to Vitest for ESM compatibility
+6. **API Simplification** (2025-10-25):
+   - Extracted `wrap` and `unwrap` as standalone functions (not Overlay methods)
+   - `wrap` now auto-fetches initiation keys when needed (no manual `getInitiationKeys` call required)
+   - Updated all tests and documentation to use new simpler API
 
 ## Next Steps
 
@@ -71,7 +78,8 @@ None
 ### Architecture
 - **Purpose:** Transport-agnostic quantum-resistant encryption layer for P2P applications
 - **Package:** `@xkore/dices`
-- **Core API:** `wrap(recipientNodeId, data) → Envelope` and `unwrap(envelope) → { senderNodeId, data }`
+- **Core API:** Standalone functions `wrap(overlay, recipientNodeId, data) → Envelope` and `unwrap(overlay, envelope) → data`
+- **Auto-fetch:** `wrap` automatically fetches initiation keys from DHT when needed (no manual `getInitiationKeys` required)
 - **DHT:** Uses @xkore/dice for key discovery only (not message transport)
 
 ### Cryptography

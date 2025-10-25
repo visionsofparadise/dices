@@ -1,6 +1,6 @@
 {
 	"name": "@xkore/dices",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"exports": {
 		".": {
@@ -25,7 +25,7 @@
 		"@noble/post-quantum": "^0.5.2",
 		"@scure/base": "^1.2.4",
 		"@types/events": "^3.0.3",
-		"@xkore/dice": "^0.3.6",
+		"@xkore/dice": "^0.3.10",
 		"bufferfy": "^3.0.6",
 		"kademlia-table": "^3.0.0",
 		"level": "^8.0.1",
@@ -33,6 +33,7 @@
 		"uint8array-tools": "^0.0.9"
 	},
 	"devDependencies": {
+		"@types/lodash-es": "^4.17.12",
 		"@types/node": "^22.0.0",
 		"tsup": "^8.0.0",
 		"typescript": "^5.5.2",

@@ -72,7 +72,7 @@ const main = async () => {
 
 		const socket6 = createSocket("udp6");
 		await new Promise<void>((resolve) => {
-			socket6.bind(undefined, ipv6 || "::1", () => resolve());
+			socket6.bind(port, ipv6 || "::1", () => resolve());
 		});
 
 		const socket4 = createSocket("udp4");

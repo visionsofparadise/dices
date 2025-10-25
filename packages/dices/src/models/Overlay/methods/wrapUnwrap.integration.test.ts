@@ -1,21 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { INTEGRATION_TEST_TIMEOUT_MS, spawnIntegrationOverlays } from "../../../utilities/spawnIntegrationOverlays.js";
+import { wrap } from "../../../wrap.js";
+import { unwrap } from "../../../unwrap.js";
 
-describe("Overlay.wrap/unwrap", () => {
+describe("wrap/unwrap", () => {
 	it(
 		"wraps and unwraps messages",
 		async () => {
 			await spawnIntegrationOverlays(undefined, async (_, [overlayA, overlayB]) => {
 				const message = new TextEncoder().encode("Hello from overlayA!");
 
-				// overlayA wraps a message for overlayB using overlayB's initiation keys
-				const envelope = await overlayA.wrap(overlayB.keys.nodeId, overlayB.currentRatchetKeys!.publicKeys, message);
+				// wrap auto-fetches initiation keys from DHT
+				const envelope = await wrap(overlayB.keys.nodeId, message, overlayA);
 
 				expect(envelope).toBeDefined();
 				expect(envelope.magicBytes).toEqual(new TextEncoder().encode("DICES"));
 
 				// overlayB unwraps the message
-				const data = await overlayB.unwrap(envelope);
+				const data = await unwrap(envelope, overlayB);
 
 				expect(new TextDecoder().decode(data)).toBe("Hello from overlayA!");
 			});
@@ -37,16 +39,14 @@ describe("Overlay.wrap/unwrap", () => {
 
 				for (const msg of messages) {
 					if (msg.from === "A") {
-						// For first message, provide initiation keys; for subsequent messages, pass undefined
-						const initiationKeys = msg.text.includes("First") ? overlayB.currentRatchetKeys!.publicKeys : undefined;
-						const envelope = await overlayA.wrap(overlayB.keys.nodeId, initiationKeys, new TextEncoder().encode(msg.text));
-						const data = await overlayB.unwrap(envelope);
+						// wrap auto-handles initiation keys for both first and subsequent messages
+						const envelope = await wrap(overlayB.keys.nodeId, new TextEncoder().encode(msg.text), overlayA);
+						const data = await unwrap(envelope, overlayB);
 						expect(new TextDecoder().decode(data)).toBe(msg.text);
 					} else {
-						// For first message, provide initiation keys; for subsequent messages, pass undefined
-						const initiationKeys = msg.text.includes("First") ? overlayA.currentRatchetKeys!.publicKeys : undefined;
-						const envelope = await overlayB.wrap(overlayA.keys.nodeId, initiationKeys, new TextEncoder().encode(msg.text));
-						const data = await overlayA.unwrap(envelope);
+						// wrap auto-handles initiation keys for both first and subsequent messages
+						const envelope = await wrap(overlayA.keys.nodeId, new TextEncoder().encode(msg.text), overlayB);
+						const data = await unwrap(envelope, overlayA);
 						expect(new TextDecoder().decode(data)).toBe(msg.text);
 					}
 				}

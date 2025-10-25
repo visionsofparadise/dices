@@ -19,5 +19,10 @@ export const handleOverlayFindNode = async (overlay: Overlay, request: Message<M
 
 	response.body.signature = overlay.keys.sign(response.hash);
 
-	await overlay.diceClient.overlays[context.remoteAddress.type]?.send(context.remoteAddress, response.buffer);
+	try {
+		await overlay.diceClient.overlays[context.remoteAddress.type]?.send(context.remoteAddress, response.buffer);
+	} catch (error: any) {
+		// ignore socket close errors during teardown
+		if (error?.code !== 'ERR_SOCKET_DGRAM_NOT_RUNNING') throw error;
+	}
 };

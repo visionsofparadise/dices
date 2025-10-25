@@ -39,7 +39,63 @@ export namespace Envelope {
 }
 
 export class Envelope implements Envelope.Properties {
+	/**
+	 * Creates a new envelope with encrypted data and signature.
+	 *
+	 * Static factory method that creates a complete envelope with all required properties,
+	 * computes the hash, signs it with the provided keys, and returns the envelope instance.
+	 * Typically used when manually constructing envelopes - most applications should use
+	 * Overlay.wrap() instead.
+	 *
+	 * @param properties - Envelope properties (magicBytes and version default if not provided)
+	 * @param properties.keyId - Recipient's ratchet key identifier (8 bytes)
+	 * @param properties.dhPublicKey - Sender's ephemeral X25519 public key (32 bytes)
+	 * @param properties.messageNumber - Current message number in the sending chain
+	 * @param properties.previousChainLength - Length of previous receiving chain (for DH ratchet)
+	 * @param properties.cipherData - Encrypted message data with authentication tag
+	 * @param properties.kemCiphertext - Optional ML-KEM ciphertext (for KEM ratchet rotation)
+	 * @param keys - Sender's identity keys for signing
+	 * @returns New envelope instance with computed hash and signature
+	 *
+	 * @example
+	 * ```typescript
+	 * const envelope = Envelope.create({
+	 *   keyId: recipientKeyId,
+	 *   dhPublicKey: ephemeralDhPublicKey,
+	 *   messageNumber: 0,
+	 *   previousChainLength: 0,
+	 *   cipherData: encryptedData
+	 * }, senderKeys);
+	 * ```
+	 */
 	static create = createEnvelope;
+
+	/**
+	 * Encrypts data into an envelope using ratchet state.
+	 *
+	 * Static factory method that handles the complete encryption flow: checks if ML-KEM rotation
+	 * is needed based on message/time bounds, performs rotation if required, encrypts the message,
+	 * and returns the envelope. Updates the ratchet state in place.
+	 *
+	 * @param data - Plaintext data to encrypt
+	 * @param ratchetState - Current ratchet state for the session
+	 * @param keys - Sender's identity keys for signing
+	 * @param initiationKeys - Optional recipient initiation keys (required if performing ML-KEM rotation)
+	 * @param options - Optional bounds for ML-KEM rotation
+	 * @param options.messageBound - Override default message count before rotation
+	 * @param options.timeBound - Override default time in ms before rotation
+	 * @returns Encrypted and signed envelope
+	 *
+	 * @example
+	 * ```typescript
+	 * const envelope = Envelope.encrypt(
+	 *   messageData,
+	 *   ratchetState,
+	 *   senderKeys,
+	 *   recipientInitiationKeys
+	 * );
+	 * ```
+	 */
 	static encrypt = encryptEnvelope;
 	static hash = hashEnvelope;
 
@@ -53,6 +109,34 @@ export class Envelope implements Envelope.Properties {
 	readonly cipherData: CipherData;
 	readonly rSignature: RSignature;
 
+	/**
+	 * Creates an Envelope instance from decoded wire format properties.
+	 *
+	 * Low-level constructor typically used by the codec during deserialization.
+	 * Most applications should use Envelope.create() or Overlay.wrap() instead.
+	 *
+	 * @param properties - Envelope properties from wire format
+	 * @param properties.keyId - Recipient's ratchet key identifier (8 bytes)
+	 * @param properties.dhPublicKey - Sender's ephemeral X25519 public key (32 bytes)
+	 * @param properties.messageNumber - Current message number in the sending chain
+	 * @param properties.previousChainLength - Length of previous receiving chain
+	 * @param properties.cipherData - Encrypted data with XChaCha20-Poly1305
+	 * @param properties.rSignature - Recoverable ECDSA signature over envelope hash
+	 * @param properties.kemCiphertext - Optional ML-KEM-1024 ciphertext for rotation
+	 * @param cache - Optional pre-computed values (hash, publicKey, nodeId) to avoid recalculation
+	 *
+	 * @example
+	 * ```typescript
+	 * const envelope = new Envelope({
+	 *   keyId,
+	 *   dhPublicKey,
+	 *   messageNumber: 5,
+	 *   previousChainLength: 3,
+	 *   cipherData,
+	 *   rSignature
+	 * });
+	 * ```
+	 */
 	constructor(
 		properties: RequiredProperties<Envelope.Properties, "keyId" | "dhPublicKey" | "messageNumber" | "previousChainLength" | "cipherData" | "rSignature">,
 		public cache: Envelope.Cache = {}
@@ -111,5 +195,26 @@ export class Envelope implements Envelope.Properties {
 	}
 
 	update = updateEnvelope.bind(this, this);
+
+	/**
+	 * Decrypts and authenticates the envelope, returning the plaintext data.
+	 *
+	 * Validates the protocol version, verifies the sender's signature by comparing recovered
+	 * nodeId with expected remoteNodeId, performs DH ratchet if remote key changed, and
+	 * decrypts the message using the ratchet state.
+	 *
+	 * @param remoteNodeId - Expected sender's nodeId (20 bytes) for signature verification
+	 * @param ratchetState - Current ratchet state for the session
+	 * @returns Decrypted plaintext data
+	 * @throws {DicesOverlayError} If protocol version unsupported, signature verification fails, or decryption fails
+	 *
+	 * @example
+	 * ```typescript
+	 * const envelope = EnvelopeCodec.decode(receivedBuffer);
+	 * const data = envelope.decrypt(senderNodeId, ratchetState);
+	 * console.log('Decrypted message:', data);
+	 * ```
+	 */
 	decrypt = decryptEnvelope.bind(this, this);
 }
+

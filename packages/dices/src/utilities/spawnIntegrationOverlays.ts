@@ -95,12 +95,17 @@ export const spawnIntegrationOverlays = async (
 		try {
 			await callback(bootstrapOverlays, overlays as [Overlay, Overlay]);
 		} finally {
+			// wait for in-flight DHT operations to drain before closing sockets
+			await new Promise(resolve => setTimeout(resolve, 200));
+
+
 			for (const overlay of overlays) {
+				overlay.close();
+
 				for (const diceOverlay of Object.values(overlay.diceClient.overlays)) {
 					diceOverlay.socket.close();
 				}
 
-				overlay.close();
 
 				await overlay.database.close();
 				rmSync(overlay.database.location, { recursive: true });
