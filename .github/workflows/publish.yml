@@ -53,7 +53,7 @@ jobs:
           cd ../..
           git add packages/dices/package.json package-lock.json
           git commit -m "chore: bump @xkore/dices to $NEW_VERSION [skip ci]"
-          git tag "v$NEW_VERSION"
+          git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION"
 
       - name: Build
         run: |
